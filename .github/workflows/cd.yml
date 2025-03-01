@@ -4,6 +4,10 @@ on:
     push:
       branches: [main]
 
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
 jobs:
     deploy:
         name: Deploy
@@ -21,8 +25,16 @@ jobs:
             - name: Build Notely app
               run: ./scripts/buildprod.sh
 
-            - name: Setup Gcloud
+            - name: Authenticate to GCP
+              uses: google-github-actions/auth@v2
+              with:
+                  credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+            - name: Setup Gcloud SDK
               uses: google-github-actions/setup-gcloud@v2
               with:
-                service_account_key: ${{secrets.GCP_CREDENTIALS}}
                 project_id: notely-452323
+
+            - name: Build and Push Docker Image
+              run: |
+                gcloud builds submit --tag us-central1-docker.pkg.dev/notely-452323/notely-ar-repo/notely:latest .
